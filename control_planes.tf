@@ -40,6 +40,7 @@ resource "null_resource" "control_planes" {
     private_key    = local.ssh_private_key
     agent_identity = local.ssh_identity
     host           = module.control_planes[each.key].ipv4_address
+    agent          = var.private_key == null
   }
 
   # Generating k3s server config file

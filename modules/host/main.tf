@@ -40,6 +40,7 @@ resource "hcloud_server" "server" {
     private_key    = local.ssh_private_key
     agent_identity = local.ssh_identity
     host           = self.ipv4_address
+    agent          = var.private_key == null
   }
 
   # Install MicroOS

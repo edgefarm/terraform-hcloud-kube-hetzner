@@ -38,6 +38,7 @@ resource "null_resource" "agents" {
     private_key    = local.ssh_private_key
     agent_identity = local.ssh_identity
     host           = module.agents[each.key].ipv4_address
+    agent          = var.private_key == null
   }
 
   # Generating k3s agent config file
