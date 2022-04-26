@@ -70,6 +70,7 @@ brew install hcloud
 3. Copy `terraform.tfvars.example` to `terraform.tfvars`, and replace the values from steps 1 and 2. ✅
 4. Make sure you have the latest Terraform version, ideally at least 1.1.0. You can check with `terraform -v`. ✅
 5. (Optional) Other variables in `terraform.tfvars` can be customized, like the Hetzner region and the node counts and sizes.
+6. Copy `providers.tfvars.example` to `providers.tfvars`
 
 _One of the easiest ways to use this project is as a Terraform module; see the [examples](#examples) section or the [Kube-Hetzner Terraform module](https://registry.terraform.io/modules/kube-hetzner/kube-hetzner/hcloud/latest) page._
 
@@ -203,9 +204,18 @@ In this case, we don't deploy an external load-balancer but use the default [k3s
 It is easy to use Kube-Hetzner as a Terraform module. To do so:
 
 ``` terraform
+
+locals {
+  hcloud_token = "xxxxxxxxxxxxxxxxxxYYYYYYYYYYYYYYYYYYYzzzzzzzzzzzzzzzzzzzzz"
+}
+
+provider "hcloud" {
+  token = local.hcloud_token
+}
+
 module "kube-hetzner" {
   source  = "kube-hetzner/kube-hetzner/hcloud"
-  
+  hcloud_token = local.hcloud_token
   # insert the required variables here found in terraform.tfvars.example
 }
 ```
