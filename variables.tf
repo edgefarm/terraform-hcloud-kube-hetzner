@@ -112,6 +112,12 @@ variable "automatically_upgrade_k3s" {
   description = "Whether to automatically upgrade k3s based on the selected channel"
 }
 
+variable "support_rancher_registration" {
+  type        = string
+  default     = false
+  description = "Whether to support rancher registration (by setting write_kubeconfig_mode to '0664')."
+}
+
 variable "extra_firewall_rules" {
   type        = list(any)
   default     = []
