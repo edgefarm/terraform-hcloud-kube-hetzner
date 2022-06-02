@@ -65,9 +65,6 @@
 | <a name="input_control_plane_nodepools"></a> [control\_plane\_nodepools](#input\_control\_plane\_nodepools) | Number of control plane nodes. | `list(any)` | `[]` | no |
 | <a name="input_disable_hetzner_csi"></a> [disable\_hetzner\_csi](#input\_disable\_hetzner\_csi) | Disable hetzner csi driver | `bool` | `false` | no |
 | <a name="input_disable_network_policy"></a> [disable\_network\_policy](#input\_disable\_network\_policy) | Disable k3s default network policy controller (default false, automatically true for calico) | `bool` | `false` | no |
-| <a name="input_enable_cert_manager"></a> [enable\_cert\_manager](#input\_enable\_cert\_manager) | Enable cert manager | `bool` | `false` | no |
-| <a name="input_enable_longhorn"></a> [enable\_longhorn](#input\_enable\_longhorn) | Enable Longhorn | `bool` | `false` | no |
-| <a name="input_enable_rancher"></a> [enable\_rancher](#input\_enable\_rancher) | Enable rancher | `bool` | `false` | no |
 | <a name="input_extra_firewall_rules"></a> [extra\_firewall\_rules](#input\_extra\_firewall\_rules) | Additional firewall rules to apply to the cluster | `list(any)` | `[]` | no |
 | <a name="input_hcloud_token"></a> [hcloud\_token](#input\_hcloud\_token) | Hetzner Cloud API Token | `string` | n/a | yes |
 | <a name="input_hetzner_ccm_version"></a> [hetzner\_ccm\_version](#input\_hetzner\_ccm\_version) | Version of Kubernetes Cloud Controller Manager for Hetzner Cloud | `string` | `null` | no |
@@ -82,15 +79,8 @@
 | <a name="input_placement_group_disable"></a> [placement\_group\_disable](#input\_placement\_group\_disable) | Whether to disable placement groups | `bool` | `false` | no |
 | <a name="input_private_key"></a> [private\_key](#input\_private\_key) | SSH private Key. | `string` | n/a | yes |
 | <a name="input_public_key"></a> [public\_key](#input\_public\_key) | SSH public Key. | `string` | n/a | yes |
-| <a name="input_rancher_hostname"></a> [rancher\_hostname](#input\_rancher\_hostname) | Enable rancher | `string` | `"rancher.example.com"` | no |
-| <a name="input_rancher_install_channel"></a> [rancher\_install\_channel](#input\_rancher\_install\_channel) | Rancher install channel | `string` | `"stable"` | no |
 | <a name="input_rancher_registration_manifest_url"></a> [rancher\_registration\_manifest\_url](#input\_rancher\_registration\_manifest\_url) | The url of a rancher registration manifest to apply. (see https://rancher.com/docs/rancher/v2.6/en/cluster-provisioning/registered-clusters/) | `string` | `""` | no |
-| <a name="input_traefik_acme_email"></a> [traefik\_acme\_email](#input\_traefik\_acme\_email) | Email used to recieved expiration notice for certificate | `string` | `false` | no |
-| <a name="input_traefik_acme_tls"></a> [traefik\_acme\_tls](#input\_traefik\_acme\_tls) | Whether to include the TLS configuration with the Traefik configuration | `bool` | `false` | no |
-| <a name="input_traefik_additional_options"></a> [traefik\_additional\_options](#input\_traefik\_additional\_options) | n/a | `list(string)` | `[]` | no |
-| <a name="input_traefik_enabled"></a> [traefik\_enabled](#input\_traefik\_enabled) | Whether to enable or disbale k3s traefik installation | `bool` | `true` | no |
 | <a name="input_use_cluster_name_in_node_name"></a> [use\_cluster\_name\_in\_node\_name](#input\_use\_cluster\_name\_in\_node\_name) | Whether to use the cluster name in the node name | `bool` | `true` | no |
-| <a name="input_use_klipper_lb"></a> [use\_klipper\_lb](#input\_use\_klipper\_lb) | Use klipper load balancer | `bool` | `false` | no |
 
 ### Outputs
 

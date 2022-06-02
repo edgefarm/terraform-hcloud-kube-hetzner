@@ -12,18 +12,18 @@ module "agents" {
   ssh_public_key             = var.ssh_public_key
   ssh_private_key            = var.ssh_private_key
   ssh_additional_public_keys = var.ssh_additional_public_keys
-  firewall_ids               = [hcloud_firewall.k3s.id]
+  firewall_ids               = [hcloud_firewall.rke2.id]
   placement_group_id         = var.placement_group_disable ? 0 : element(hcloud_placement_group.agent.*.id, ceil(each.value.index / 10))
   location                   = each.value.location
   server_type                = each.value.server_type
   ipv4_subnet_id             = hcloud_network_subnet.agent[[for i, v in var.agent_nodepools : i if v.name == each.value.nodepool_name][0]].id
-  packages_to_install        = local.packages_to_install
+  packages_to_install        = []
 
   private_ipv4 = cidrhost(hcloud_network_subnet.agent[[for i, v in var.agent_nodepools : i if v.name == each.value.nodepool_name][0]].ip_range, each.value.index + 101)
 
   labels = {
     "provisioner" = "terraform",
-    "engine"      = "k3s"
+    "engine"      = "rke2"
   }
 
   depends_on = [
@@ -45,14 +45,13 @@ resource "null_resource" "agents" {
     host           = module.agents[each.key].ipv4_address
   }
 
-  # Generating k3s agent config file
+  # Generating rke2 agent config file
   provisioner "file" {
     content = yamlencode({
       node-name     = module.agents[each.key].name
-      server        = "https://${module.control_planes[keys(module.control_planes)[0]].private_ipv4_address}:6443"
-      token         = random_password.k3s_token.result
+      server        = "https://${module.control_planes[keys(module.control_planes)[0]].private_ipv4_address}:9345"
+      token         = random_password.rke2_token.result
       kubelet-arg   = ["cloud-provider=external", "volume-plugin-dir=/var/lib/kubelet/volumeplugins"]
-      flannel-iface = "eth1"
       node-ip       = module.agents[each.key].private_ipv4_address
       node-label    = each.value.labels
       node-taint    = each.value.taints
@@ -60,20 +59,32 @@ resource "null_resource" "agents" {
     destination = "/tmp/config.yaml"
   }
 
-  # Install k3s agent
+  # Install rke2 agent
   provisioner "remote-exec" {
-    inline = local.install_k3s_agent
+    inline = local.install_rke2_agent
   }
 
-  # Start the k3s agent and wait for it to have started
+  # Issue a reboot command and wait for MicroOS to reboot and be ready
+  provisioner "local-exec" {
+    command = <<-EOT
+      ssh ${local.ssh_args} -i /tmp/${random_string.identity_file.id} root@${module.agents[each.key].ipv4_address} '(sleep 2; reboot)&'; sleep 3
+      until ssh ${local.ssh_args} -i /tmp/${random_string.identity_file.id} -o ConnectTimeout=2 root@${module.agents[each.key].ipv4_address} true 2> /dev/null
+      do
+        echo "Waiting for MicroOS to reboot and become available..."
+        sleep 3
+      done
+    EOT
+  }
+
+  # Start the rke2 agent and wait for it to have started
   provisioner "remote-exec" {
     inline = [
-      "systemctl start k3s-agent 2> /dev/null",
+      "systemctl start rke2-agent 2> /dev/null",
       <<-EOT
       timeout 120 bash <<EOF
-        until systemctl status k3s-agent > /dev/null; do
-          systemctl start k3s-agent 2> /dev/null
-          echo "Waiting for the k3s agent to start..."
+        until systemctl status rke2-agent > /dev/null; do
+          systemctl start rke2-agent 2> /dev/null
+          echo "Waiting for the rke2 server to start..."
           sleep 2
         done
       EOF
@@ -82,6 +93,7 @@ resource "null_resource" "agents" {
   }
 
   depends_on = [
+    null_resource.setup,
     null_resource.first_control_plane,
     hcloud_network_subnet.agent
   ]

@@ -41,7 +41,7 @@ module "kube-hetzner" {
   network_region = "eu-central" # change to `us-east` if location is ash
 
   # For the control planes, at least three nodes are the minimum for HA. Otherwise, you need to turn off the automatic upgrade (see ReadMe).
-  # As per Rancher docs, it must always be an odd number, never even! See https://rancher.com/docs/k3s/latest/en/installation/ha-embedded/
+  # As per Rancher docs, it must always be an odd number, never even! See https://rancher.com/docs/rke2/latest/en/installation/ha-embedded/
   # For instance, one is ok (non-HA), two is not ok, and three is ok (becomes HA). It does not matter if they are in the same nodepool or not! So they can be in different locations and of various types.
 
   # Of course, you can choose any number of nodepools you want, with the location you want. The only constraint on the location is that you need to stay in the same network region, Europe, or the US.
@@ -126,9 +126,6 @@ module "kube-hetzner" {
 
   ### The following values are entirely optional
 
-  # To use local storage on the nodes, you can enable Longhorn, default is "false".
-  # enable_longhorn = true
-
   # To disable Hetzner CSI storage, you can set the following to true, default is "false".
   # disable_hetzner_csi = true
 
@@ -139,15 +136,6 @@ module "kube-hetzner" {
   # If you want to specify the Kured version, set it below - otherwise it'll use the latest version available
   # kured_version = ""
 
-  # We give you the possibility to use letsencrypt directly with Traefik because it's an easy setup, however it's not optimal,
-  # as the free version of Traefik causes a little bit of downtime when when the certificates get renewed. For proper SSL management,
-  # we instead recommend you to use cert-manager, that you can easily deploy with helm; see https://cert-manager.io/.
-  # traefik_acme_tls = true
-  # traefik_acme_email = "mail@example.com"
-
-  # If you want to disable the Traefik ingress controller, you can can set this to "false". Default is "true".
-  # traefik_enabled = false
-
   # If you want to disable the metric server, you can! Default is "true".
   # metrics_server_enabled = false
 
@@ -155,14 +143,14 @@ module "kube-hetzner" {
   # True by default for single node clusters.
   # allow_scheduling_on_control_plane = true
 
-  # If you want to disable the automatic upgrade of k3s, you can set this to false. The default is "true".
-  # automatically_upgrade_k3s = false
+  # If you want to disable the automatic upgrade of rke2, you can set this to false. The default is "true".
+  # automatically_upgrade_rke2 = false
 
   # Allows you to specify either stable, latest, testing or supported minor versions (defaults to stable)
-  # see https://rancher.com/docs/k3s/latest/en/upgrades/basic/ and https://update.k3s.io/v1-release/channels
-  # initial_k3s_channel = "latest"
+  # see https://rancher.com/docs/rke2/latest/en/upgrades/basic/ and https://update.rke2.io/v1-release/channels
+  # initial_rke2_channel = "latest"
 
-  # The cluster name, by default "k3s"
+  # The cluster name, by default "rke2"
   # cluster_name = ""
 
   # Whether to use the cluster name in the node name, in the form of {cluster_name}-{nodepool_name}, the default is "true".
@@ -189,60 +177,13 @@ module "kube-hetzner" {
   #   }
   # ]
 
-  # If you want to configure additional Arguments for traefik, enter them here as a list and in the form of traefik CLI arguments; see https://doc.traefik.io/traefik/reference/static-configuration/cli/
-  # Example: traefik_additional_options = ["--log.level=DEBUG", "--tracing=true"]
-  # traefik_additional_options = []
-
-  # Use the klipper LB, instead of the default Hetzner one, that has an advantage of dropping the cost of the setup,
-  # but you would need to point your DNS to every schedulable IPs in your cluster (usually agents). The default is "false".
-  # Automatically "true" in the case of single node cluster.
-  # use_klipper_lb = "true"
-
-  # If you want to configure a different CNI for k3s, use this flag
-  # possible values: flannel (Default), calico
-  # Cilium or other would be easy to add, you can mirror how Calico was added. PRs are welcome!
-  # CAVEATS: Calico is not supported when not using the Hetzner LB (like when use_klipper_lb is set to true or when using a single node cluster),
-  # because of the following issue https://github.com/k3s-io/klipper-lb/issues/6.
-  # cni_plugin = "calico"
-
-  # If you want to disable the k3s default network policy controller, use this flag!
+  # If you want to disable the rke2 default network policy controller, use this flag!
   # Calico overrides this value to true automatically, the default is "false".
   # disable_network_policy = true
 
   # If you want to disable the automatic use of placement group "spread". See https://docs.hetzner.com/cloud/placement-groups/overview/
   # That may be useful if you need to deploy more than 500 nodes! The default is "false".
   # placement_group_disable = true
-
-  # You can enable cert-manager (installed by Helm behind the scenes) with the following flag, the default is "false".
-  # enable_cert_manager = true
-
-  # You can enable Rancher (installed by Helm behind the scenes) with the following flag, the default is "false".
-  # When Rancher is enabled, it automatically installs cert-manager too, and it uses rancher's own certificates.
-  # As for the number of replicas, it is set to the numbe of control plane nodes.
-  # IMPORTANT: Rancher's install is quite memory intensive, you will require at least 4GB if RAM, meaning cx21 server type (for your control plane).
-  # You can customized all of the above by creating and applying a HelmChartConfig to pass the helm chart values of your choice. 
-  # See https://rancher.com/docs/k3s/latest/en/helm/ 
-  # and https://rancher.com/docs/rancher/v2.6/en/installation/install-rancher-on-k8s/chart-options/
-  # enable_rancher = true
-
-  # When Rancher is deployed, by default is uses the "stable" channel. But this can be customized.
-  # The allowed values are "stable", "latest", and "alpha".
-  # rancher_install_channel = "latest"
-
-  # Here you can set the Rancher hostname, the default is "rancher.example.com".
-  # It is a required value when using rancher, but up to you to point the DNS to it or not. 
-  # You can also not point the DNS, and just port-forward locally via kubectl to get access to the dashboard.
-  # rancher_hostname = "rancher.xyz.dev"
-
-  # Here you can specify the Rancher TLS source for the HTTPS certificate.
-  # The allowed values are "rancher", "letsEncrypt", "secret", the default is "rancher". 
-  # More details on this here https://rancher.com/docs/rancher/v2.0-v2.4/en/installation/resources/advanced/helm2/helm-rancher/#choose-your-ssl-configuration
-  # rancher_tls_source = "letsEncrypt"
-
-  # Finally, you can specify a bootstrap-password for your rancher instance. Minimum 48 characters long!
-  # If you leave empty, one will be generated for you.
-  # Can be used by another rancher2 provider to continue setup of rancher outside this module.
-  # rancher_bootstrap_password = ""
 
   # Separate from the above Rancher config (only use one or the other). You can import this cluster directly on an
   # an already active Rancher install. By clicking "import cluster" choosing "generic", giving it a name and pasting

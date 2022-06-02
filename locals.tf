@@ -3,28 +3,35 @@ locals {
   # For terraforms provisioner.connection.agent_identity, we need the public key as a string.
   ssh_agent_identity = var.ssh_private_key == null ? var.ssh_public_key : null
 
+  # ssh_client_identity is used for ssh "-i" flag, its the private key if that is set, or a public key
+  # if an ssh agent is used.
+  ssh_client_identity = var.ssh_private_key == null ? var.ssh_public_key : var.ssh_private_key
+
+  # shared flags for ssh to ignore host keys for all connections during provisioning.
+  ssh_args = "-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no"
+
   # If passed, a key already registered within hetzner is used. 
   # Otherwise, a new one will be created by the module.
-  hcloud_ssh_key_id = var.hcloud_ssh_key_id == null ? hcloud_ssh_key.k3s[0].id : var.hcloud_ssh_key_id
+  hcloud_ssh_key_id = var.hcloud_ssh_key_id == null ? hcloud_ssh_key.rke2[0].id : var.hcloud_ssh_key_id
 
   ccm_version   = var.hetzner_ccm_version != null ? var.hetzner_ccm_version : data.github_release.hetzner_ccm.release_tag
   csi_version   = var.hetzner_csi_version != null ? var.hetzner_csi_version : data.github_release.hetzner_csi.release_tag
   kured_version = var.kured_version != null ? var.kured_version : data.github_release.kured.release_tag
 
-  common_commands_install_k3s = [
+  common_commands_install_rke2 = [
     "set -ex",
-    # prepare the k3s config directory
-    "mkdir -p /etc/rancher/k3s",
+    # prepare the rke2 config directory
+    "mkdir -p /etc/rancher/rke2",
     # move the config file into place
-    "mv /tmp/config.yaml /etc/rancher/k3s/config.yaml",
+    "mv /tmp/config.yaml /etc/rancher/rke2/config.yaml",
     # if the server has already been initialized just stop here
-    "[ -e /etc/rancher/k3s/k3s.yaml ] && exit 0",
+    "[ -e /etc/rancher/rke2/rke2.yaml ] && exit 0",
   ]
 
-  apply_k3s_selinux = ["/sbin/semodule -v -i /usr/share/selinux/packages/k3s.pp"]
+  apply_rke2_selinux = ["/sbin/semodule -v -i /usr/share/selinux/packages/rke2.pp"]
 
-  install_k3s_server = concat(local.common_commands_install_k3s, ["curl -sfL https://get.k3s.io | INSTALL_K3S_SKIP_START=true INSTALL_K3S_SKIP_SELINUX_RPM=true INSTALL_K3S_CHANNEL=${var.initial_k3s_channel} INSTALL_K3S_EXEC=server sh -"], local.apply_k3s_selinux)
-  install_k3s_agent  = concat(local.common_commands_install_k3s, ["curl -sfL https://get.k3s.io | INSTALL_K3S_SKIP_START=true INSTALL_K3S_SKIP_SELINUX_RPM=true INSTALL_K3S_CHANNEL=${var.initial_k3s_channel} INSTALL_K3S_EXEC=agent sh -"], local.apply_k3s_selinux)
+  install_rke2_server = concat(local.common_commands_install_rke2, ["curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=${var.initial_rke2_channel} INSTALL_RKE2_METHOD=rpm INSTALL_RKE2_TYPE=server sh -"], local.apply_rke2_selinux)
+  install_rke2_agent  = concat(local.common_commands_install_rke2, ["curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=${var.initial_rke2_channel} INSTALL_RKE2_METHOD=rpm INSTALL_RKE2_TYPE=agent sh -"], local.apply_rke2_selinux)
 
   control_plane_nodes = merge([
     for pool_index, nodepool_obj in var.control_plane_nodepools : {
@@ -66,21 +73,17 @@ locals {
   agent_count            = sum([for v in var.agent_nodepools : v.count])
   is_single_node_cluster = (local.control_plane_count + local.agent_count) == 1
 
-  using_klipper_lb = var.use_klipper_lb || local.is_single_node_cluster
+    # disable rke2 extras
+  disable_extras = concat(["local-storage"], var.metrics_server_enabled ? [] : ["metrics-server"])
 
-  # disable k3s extras
-  disable_extras = concat(["local-storage"], local.using_klipper_lb ? [] : ["servicelb"], var.traefik_enabled ? [] : ["traefik"], var.metrics_server_enabled ? [] : ["metrics-server"])
-
-  # Default k3s node labels
-  default_agent_labels         = concat([], var.automatically_upgrade_k3s ? ["k3s_upgrade=true"] : [])
-  default_control_plane_labels = concat([], var.automatically_upgrade_k3s ? ["k3s_upgrade=true"] : [])
+  # Default rke2 node labels
+  default_agent_labels         = concat([], var.automatically_upgrade_rke2 ? ["rke2_upgrade=true"] : [])
+  default_control_plane_labels = concat([], var.automatically_upgrade_rke2 ? ["rke2_upgrade=true"] : [])
 
   allow_scheduling_on_control_plane = local.is_single_node_cluster ? true : var.allow_scheduling_on_control_plane
 
-  # Default k3s node taints
+  # Default rke2 node taints
   default_control_plane_taints = concat([], local.allow_scheduling_on_control_plane ? [] : ["node-role.kubernetes.io/master:NoSchedule"])
-
-  packages_to_install = concat(var.enable_longhorn ? ["open-iscsi", "nfs-client"] : [], [])
 
   # The following IPs are important to be whitelisted because they communicate with Hetzner services and enable the CCM and CSI to work properly.
   # Source https://github.com/hetznercloud/csi-driver/issues/204#issuecomment-848625566
@@ -201,24 +204,5 @@ locals {
         "0.0.0.0/0"
       ]
     }
-    ], !local.using_klipper_lb ? [] : [
-    # Allow incoming web traffic for single node clusters, because we are using k3s servicelb there,
-    # not an external load-balancer.
-    {
-      direction = "in"
-      protocol  = "tcp"
-      port      = "80"
-      source_ips = [
-        "0.0.0.0/0"
-      ]
-    },
-    {
-      direction = "in"
-      protocol  = "tcp"
-      port      = "443"
-      source_ips = [
-        "0.0.0.0/0"
-      ]
-    }
-  ])
+    ])
 }

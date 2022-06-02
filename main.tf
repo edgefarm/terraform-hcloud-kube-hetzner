@@ -1,15 +1,15 @@
-resource "random_password" "k3s_token" {
+resource "random_password" "rke2_token" {
   length  = 48
   special = false
 }
 
-resource "hcloud_ssh_key" "k3s" {
+resource "hcloud_ssh_key" "rke2" {
   count      = var.hcloud_ssh_key_id == null ? 1 : 0
   name       = var.cluster_name
   public_key = var.ssh_public_key
 }
 
-resource "hcloud_network" "k3s" {
+resource "hcloud_network" "rke2" {
   name     = var.cluster_name
   ip_range = local.network_ipv4_cidr
 }
@@ -18,7 +18,7 @@ resource "hcloud_network" "k3s" {
 # as we would have fewer control plane nodepools, than angent ones.
 resource "hcloud_network_subnet" "control_plane" {
   count        = length(var.control_plane_nodepools)
-  network_id   = hcloud_network.k3s.id
+  network_id   = hcloud_network.rke2.id
   type         = "cloud"
   network_zone = var.network_region
   ip_range     = local.network_ipv4_subnets[255 - count.index]
@@ -27,13 +27,13 @@ resource "hcloud_network_subnet" "control_plane" {
 # Here we start at the beginning of the subnets cird array
 resource "hcloud_network_subnet" "agent" {
   count        = length(var.agent_nodepools)
-  network_id   = hcloud_network.k3s.id
+  network_id   = hcloud_network.rke2.id
   type         = "cloud"
   network_zone = var.network_region
   ip_range     = local.network_ipv4_subnets[count.index]
 }
 
-resource "hcloud_firewall" "k3s" {
+resource "hcloud_firewall" "rke2" {
   name = var.cluster_name
 
   dynamic "rule" {
@@ -60,37 +60,9 @@ resource "hcloud_placement_group" "agent" {
   type  = "spread"
 }
 
-data "hcloud_load_balancer" "traefik" {
-  count = local.using_klipper_lb ? 0 : var.traefik_enabled == false ? 0 : 1
-  name  = "${var.cluster_name}-traefik"
+# data "hcloud_load_balancer" "ingress-nginx" {
+#   count = 1
+#   name  = "${var.cluster_name}-ingress-nginx"
 
-  depends_on = [null_resource.kustomization]
-}
-
-resource "null_resource" "destroy_traefik_loadbalancer" {
-
-  # this only gets triggered before total destruction of the cluster, but when the necessary elements to run the commands are still available
-  triggers = {
-    kustomization_id = null_resource.kustomization.id
-    cluster_name     = var.cluster_name
-  }
-
-  # Important when issuing terraform destroy, otherwise the LB will not let the network get deleted
-  provisioner "local-exec" {
-    when       = destroy
-    command    = "kubectl -n kube-system delete service traefik --kubeconfig kubeconfig.yaml"
-    on_failure = continue
-  }
-
-  depends_on = [
-    local_sensitive_file.kubeconfig,
-    null_resource.control_planes[0],
-    hcloud_network_subnet.control_plane,
-    hcloud_network_subnet.agent,
-    hcloud_placement_group.control_plane,
-    hcloud_placement_group.agent,
-    hcloud_network.k3s,
-    hcloud_firewall.k3s,
-    hcloud_ssh_key.k3s
-  ]
-}
+#   depends_on = [null_resource.kustomization]
+# }

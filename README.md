@@ -14,7 +14,7 @@
   <h2 align="center">Kube-Hetzner</h2>
 
   <p align="center">
-    A highly optimized and auto-upgradable, HA-default & Load-Balanced, Kubernetes cluster powered by k3s-on-MicroOS and deployed for peanuts on <a href="https://hetzner.com" target="_blank">Hetzner Cloud</a> 🤑 🚀
+    A highly optimized and auto-upgradable, HA-default & Load-Balanced, Kubernetes cluster powered by rke2-on-MicroOS and deployed for peanuts on <a href="https://hetzner.com" target="_blank">Hetzner Cloud</a> 🤑 🚀
   </p>
   <hr />
 </p>
@@ -25,20 +25,19 @@
 
 This project aims to create an optimal and highly optimized Kubernetes installation that is easily maintained, secure and automatic upgrades. We aimed for functionality as close as possible to GKE's auto-pilot.
 
-To achieve this, we built it on the shoulders of giants by choosing [openSUSE MicroOS](https://en.opensuse.org/Portal:MicroOS) as the base operating system and [k3s](https://k3s.io/) as the Kubernetes engine.
+To achieve this, we built it on the shoulders of giants by choosing [openSUSE MicroOS](https://en.opensuse.org/Portal:MicroOS) as the base operating system and [rke2](https://rke2.io/) as the Kubernetes engine.
 
 _Please note that we are not affiliates of Hetzner; this is just an open-source project striving to be an optimal solution for deploying and maintaining Kubernetes on Hetzner Cloud._
 
 ### Features
 
-- Maintenance-free with auto-upgrade to the latest version of MicroOS and k3s.
+- Maintenance-free with auto-upgrade to the latest version of MicroOS and rke2.
 - Proper use of the Hetzner private network to minimize latency and remove the need for encryption.
 - Automatic HA with the default setting of three control-plane nodes and two agent nodes.
 - Super-HA: Nodepools for both control-plane and agent nodes can be in different locations.
 - Possibility to have a single node cluster with a proper ingress controller.
 - Ability to add nodes and nodepools when the cluster is running.
 - Traefik ingress controller attached to a Hetzner load balancer with proxy protocol turned on.
-- Possibility to turn Longhorn on, and optionally also turn Hetzner CSI off.
 - Ability to switch to Calico as CNI, and Cilium can also be easily added.
 - Tons of flexible configuration options to suit all needs.
 
@@ -113,9 +112,9 @@ _However, you can freely add other nodepools at the end of the list, increasing 
 
 By default, we have three control planes and three agents configured, with automatic upgrades and reboots of the nodes.
 
-If you want to remain HA (no downtime), it's essential to **keep a count of control planes nodes of at least three** (two minimum to maintain quorum when one goes down for automated upgrades and reboot), see [Rancher's doc on HA](https://rancher.com/docs/k3s/latest/en/installation/ha-embedded/).
+If you want to remain HA (no downtime), it's essential to **keep a count of control planes nodes of at least three** (two minimum to maintain quorum when one goes down for automated upgrades and reboot), see [Rancher's doc on HA](https://rancher.com/docs/rke2/latest/en/installation/ha-embedded/).
 
-Otherwise, it's essential to turn off automatic OS upgrades (k3s can continue to update without issue) for the control-plane nodes (when two or fewer control-plane nodes) and do the maintenance yourself.
+Otherwise, it's essential to turn off automatic OS upgrades (rke2 can continue to update without issue) for the control-plane nodes (when two or fewer control-plane nodes) and do the maintenance yourself.
 
 ## Automatic Upgrade
 
@@ -123,9 +122,9 @@ Otherwise, it's essential to turn off automatic OS upgrades (k3s can continue to
 
 By default, MicroOS gets upgraded automatically on each node and reboot safely via [Kured](https://github.com/weaveworks/kured) installed in the cluster.
 
-As for k3s, it also automatically upgrades thanks to Rancher's [system upgrade controller](https://github.com/rancher/system-upgrade-controller). By default, it follows the k3s `stable` channel, but you can also change to the `latest` one if needed or specify a target version to upgrade to via the upgrade plan.
+As for rke2, it also automatically upgrades thanks to Rancher's [system upgrade controller](https://github.com/rancher/system-upgrade-controller). By default, it follows the rke2 `stable` channel, but you can also change to the `latest` one if needed or specify a target version to upgrade to via the upgrade plan.
 
-You can copy and modify the [one in the templates](https://github.com/kube-hetzner/kube-hetzner/blob/master/templates/plans.yaml.tpl) for that! More on the subject in [k3s upgrades](https://rancher.com/docs/k3s/latest/en/upgrades/basic/).
+You can copy and modify the [one in the templates](https://github.com/kube-hetzner/kube-hetzner/blob/master/templates/plans.yaml.tpl) for that! More on the subject in [rke2 upgrades](https://rancher.com/docs/rke2/latest/en/upgrades/basic/).
 
 ### Turning Off Automatic Upgrade
 
@@ -136,17 +135,17 @@ systemctl --now disable transactional-update.timer
 
 ```
 
-_To turn off k3s upgrades, you can either remove the `k3s_upgrade=true` label or set it to `false`. This needs to happen for all the nodes too! To remove it, apply:_
+_To turn off rke2 upgrades, you can either remove the `rke2_upgrade=true` label or set it to `false`. This needs to happen for all the nodes too! To remove it, apply:_
 
 ```sh
-kubectl -n system-upgrade label node <node-name> k3s_upgrade-
+kubectl -n system-upgrade label node <node-name> rke2_upgrade-
 ```
 
-Alternatively, you can disable the k3s automatic upgrade without individually editing the labels on the nodes. Instead you can just delete the two system controller upgrade plans with:
+Alternatively, you can disable the rke2 automatic upgrade without individually editing the labels on the nodes. Instead you can just delete the two system controller upgrade plans with:
 
 ```sh
-kubectl delete plan k3s-agent -n system-upgrade
-kubectl delete plan k3s-server -n system-upgrade
+kubectl delete plan rke2-agent -n system-upgrade
+kubectl delete plan rke2-server -n system-upgrade
 ```
 
 ### Individual Components Upgrade
@@ -243,7 +242,7 @@ spec:
 
 Running a development cluster on a single node without any high availability is also possible. You need one control plane nodepool with a count of 1 and one agent nodepool with a count of 0.
 
-In this case, we don't deploy an external load-balancer but use the default [k3s service load balancer](https://rancher.com/docs/k3s/latest/en/networking/#service-load-balancer) on the host itself and open up port 80 & 443 in the firewall (done automatically).
+In this case, we don't deploy an external load-balancer but use the default [rke2 service load balancer](https://rancher.com/docs/rke2/latest/en/networking/#service-load-balancer) on the host itself and open up port 80 & 443 in the firewall (done automatically).
 
 </details>
 
@@ -284,7 +283,7 @@ First and foremost, it depends, but it's always good to have a quick look into H
 
 - Activate it with `hcloud context create Kube-hetzner`; it will prompt for your Hetzner API token, paste that, and hit `enter`.
 - To check the nodes, if they are running, use `hcloud server list`.
-- To check the network, use `hcloud network describe k3s`.
+- To check the network, use `hcloud network describe rke2`.
 - To look at the LB, use `hcloud loadbalancer describe traefik`.
 
 Then for the rest, you'll often need to login to your cluster via ssh, to do that, use:
@@ -294,7 +293,7 @@ ssh root@xxx.xxx.xxx.xxx -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no
 
 ```
 
-Then, for control-plane nodes, use `journalctl -u k3s` to see the k3s logs, and for agents, use `journalctl -u k3s-agent` instead.
+Then, for control-plane and agents nodes, use `journalctl -u rke2-server` to see the rke2 logs.
 
 Last but not least, to see when the previous reboot took place, you can use both `last reboot` and `uptime`.
 
@@ -306,7 +305,7 @@ If you want to take down the cluster, you can proceed as follows:
 terraform destroy -auto-approve
 ```
 
-And if the network is slow to delete, just issue `hcloud network delete k3s` to speed things up!
+And if the network is slow to delete, just issue `hcloud network delete rke2` to speed things up!
 
 _Also, if you had a full-blown cluster in use, it would be best to delete the whole project in your Hetzner account directly as operators or deployments may create other resources during regular operation._
 
@@ -316,7 +315,7 @@ _Also, if you had a full-blown cluster in use, it would be best to delete the wh
 
 This project has tried two other OS flavors before settling on MicroOS. Fedora Server, and k3OS. The latter, k3OS, is now defunct! However, our code base for it lives on in the [k3os branch](https://github.com/kube-hetzner/kube-hetzner/tree/k3os). Do not hesitate to check it out, it should still work.
 
-There is also a branch where openSUSE MicroOS came preinstalled with the k3s RPM from devel:kubic/k3s, but we moved away from that solution as the k3s version was rarely getting updates. See the [microOS-k3s-rpm](https://github.com/kube-hetzner/kube-hetzner/tree/microOS-k3s-rpm) branch for more.
+There is also a branch where openSUSE MicroOS came preinstalled with the rke2 RPM from devel:kubic/rke2, but we moved away from that solution as the rke2 version was rarely getting updates. See the [microOS-rke2-rpm](https://github.com/kube-hetzner/kube-hetzner/tree/microOS-rke2-rpm) branch for more.
 
 ## Contributing
 
@@ -338,7 +337,7 @@ Code contributions are very much **welcome**.
 - [Best-README-Template](https://github.com/othneildrew/Best-README-Template) made writing this readme a lot easier.
 - [Hetzner Cloud](https://www.hetzner.com) for providing a solid infrastructure and terraform package.
 - [Hashicorp](https://www.hashicorp.com) for the amazing terraform framework that makes all the magic happen.
-- [Rancher](https://www.rancher.com) for k3s, an amazing Kube distribution that is the core engine of this project.
+- [Rancher](https://www.rancher.com) for rke2, an amazing Kube distribution that is the core engine of this project.
 - [openSUSE](https://www.opensuse.org) for MicroOS, which is just next level Container OS technology.
 
 [contributors-shield]: https://img.shields.io/github/contributors/mysticaltech/kube-hetzner.svg?style=for-the-badge

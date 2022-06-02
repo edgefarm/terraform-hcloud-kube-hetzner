@@ -17,12 +17,10 @@ output "agents_public_ipv4" {
   description = "The public IPv4 addresses of the agent server."
 }
 
-output "load_balancer_public_ipv4" {
-  description = "The public IPv4 address of the Hetzner load balancer"
-  value = local.using_klipper_lb ? [
-    for obj in module.control_planes : obj.ipv4_address
-  ][0] : var.traefik_enabled == false ? null : data.hcloud_load_balancer.traefik[0].ipv4
-}
+# output "load_balancer_public_ipv4" {
+#   description = "The public IPv4 address of the Hetzner load balancer"
+#   value = data.hcloud_load_balancer.ingress-nginx[0].ipv4
+# }
 
 output "kubeconfig_file" {
   value       = local.kubeconfig_external
@@ -30,8 +28,8 @@ output "kubeconfig_file" {
   sensitive   = true
 }
 
-output "kubeconfig" {
-  description = "Structured kubeconfig data to supply to other providers"
-  value       = local.kubeconfig_data
-  sensitive   = true
-}
+# output "kubeconfig" {
+#   description = "Structured kubeconfig data to supply to other providers"
+#   value       = local.kubeconfig_data
+#   sensitive   = true
+# }

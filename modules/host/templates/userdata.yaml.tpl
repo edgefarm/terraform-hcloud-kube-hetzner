@@ -23,16 +23,16 @@ write_files:
     REBOOT_METHOD=kured
   path: /etc/transactional-update.conf
 
-# Create Rancher repo config
-- content: |
-    [rancher-k3s-common-stable]
-    name=Rancher K3s Common (stable)
-    baseurl=https://rpm.rancher.io/k3s/stable/common/microos/noarch
-    enabled=1
-    gpgcheck=1
-    repo_gpgcheck=0
-    gpgkey=https://rpm.rancher.io/public.key
-  path: /etc/zypp/repos.d/rancher-k3s-common.repo
+# # Create Rancher repo config
+# - content: |
+#     [rancher-rke2-common-stable]
+#     name=Rancher rke2 Common (stable)
+#     baseurl=https://rpm.rancher.io/rke2/stable/common/microos/noarch
+#     enabled=1
+#     gpgcheck=1
+#     repo_gpgcheck=0
+#     gpgkey=https://rpm.rancher.io/public.key
+#   path: /etc/zypp/repos.d/rancher-rke2-common.repo
 
 # Add ssh authorized keys
 ssh_authorized_keys:

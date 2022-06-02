@@ -81,7 +81,7 @@ resource "hcloud_server" "server" {
     EOT
   }
 
-  # Install k3s-selinux (compatible version) and open-iscsi
+  # Install rke2-selinux (compatible version) and open-iscsi
   provisioner "remote-exec" {
     inline = [<<-EOT
       set -ex

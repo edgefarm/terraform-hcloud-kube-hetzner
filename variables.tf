@@ -81,24 +81,6 @@ variable "kured_version" {
   description = "Version of Kured"
 }
 
-variable "traefik_enabled" {
-  type        = bool
-  default     = true
-  description = "Whether to enable or disbale k3s traefik installation"
-}
-
-variable "traefik_acme_tls" {
-  type        = bool
-  default     = false
-  description = "Whether to include the TLS configuration with the Traefik configuration"
-}
-
-variable "traefik_acme_email" {
-  type        = string
-  default     = false
-  description = "Email used to recieved expiration notice for certificate"
-}
-
 variable "allow_scheduling_on_control_plane" {
   type        = bool
   default     = false
@@ -108,24 +90,24 @@ variable "allow_scheduling_on_control_plane" {
 variable "metrics_server_enabled" {
   type        = bool
   default     = true
-  description = "Whether to enable or disbale k3s mertric server"
+  description = "Whether to enable or disbale rke2 mertric server"
 }
 
-variable "initial_k3s_channel" {
+variable "initial_rke2_channel" {
   type        = string
   default     = "stable"
-  description = "Allows you to specify an initial k3s channel"
+  description = "Allows you to specify an initial rke2 channel"
 
   validation {
-    condition     = contains(["stable", "latest", "testing", "v1.16", "v1.17", "v1.18", "v1.19", "v1.20", "v1.21", "v1.22", "v1.23", "v1.24"], var.initial_k3s_channel)
-    error_message = "The initial k3s channel must be one of stable, latest or testing."
+    condition     = contains(["stable", "latest", "testing", "v1.16", "v1.17", "v1.18", "v1.19", "v1.20", "v1.21", "v1.22", "v1.23", "v1.24"], var.initial_rke2_channel)
+    error_message = "The initial rke2 channel must be one of stable, latest or testing."
   }
 }
 
-variable "automatically_upgrade_k3s" {
+variable "automatically_upgrade_rke2" {
   type        = bool
   default     = true
-  description = "Whether to automatically upgrade k3s based on the selected channel"
+  description = "Whether to automatically upgrade rke2 based on the selected channel"
 }
 
 variable "extra_firewall_rules" {
@@ -142,18 +124,13 @@ variable "use_cluster_name_in_node_name" {
 
 variable "cluster_name" {
   type        = string
-  default     = "k3s"
+  default     = "rke2"
   description = "Name of the cluster"
 
   validation {
     condition     = can(regex("^[a-z1-9\\-]+$", var.cluster_name))
     error_message = "The cluster name must be in the form of lowercase alphanumeric characters and/or dashes."
   }
-}
-
-variable "traefik_additional_options" {
-  type    = list(string)
-  default = []
 }
 
 variable "placement_group_disable" {
@@ -165,19 +142,7 @@ variable "placement_group_disable" {
 variable "disable_network_policy" {
   type        = bool
   default     = false
-  description = "Disable k3s default network policy controller (default false, automatically true for calico)"
-}
-
-variable "cni_plugin" {
-  type        = string
-  default     = "flannel"
-  description = "CNI plugin for k3s"
-}
-
-variable "enable_longhorn" {
-  type        = bool
-  default     = false
-  description = "Enable Longhorn"
+  description = "Disable rke2 default network policy controller (default false, automatically true for calico)"
 }
 
 variable "disable_hetzner_csi" {
@@ -186,67 +151,9 @@ variable "disable_hetzner_csi" {
   description = "Disable hetzner csi driver"
 }
 
-variable "enable_cert_manager" {
-  type        = bool
-  default     = false
-  description = "Enable cert manager"
-}
-
-variable "enable_rancher" {
-  type        = bool
-  default     = false
-  description = "Enable rancher"
-}
-
-variable "rancher_install_channel" {
-  type        = string
-  default     = "stable"
-  description = "Rancher install channel"
-
-  validation {
-    condition     = contains(["stable", "latest", "alpha"], var.rancher_install_channel)
-    error_message = "The allowed values for the Rancher install channel are stable, latest, or alpha."
-  }
-}
-
-variable "rancher_hostname" {
-  type        = string
-  default     = "rancher.example.com"
-  description = "Enable rancher"
-}
-
 variable "rancher_registration_manifest_url" {
   type        = string
   description = "The url of a rancher registration manifest to apply. (see https://rancher.com/docs/rancher/v2.6/en/cluster-provisioning/registered-clusters/)"
   default     = ""
   sensitive   = true
-}
-
-variable "rancher_tls_source" {
-  type        = string
-  default     = "rancher"
-  description = "Which CA to use for the rancher-certificate (rancher, letsEncrypt or secret)"
-
-  validation {
-    condition     = contains(["rancher", "letsEncrypt", "secret"], var.rancher_tls_source)
-    error_message = "The allowed values for the Rancher TLS source are either rancher, letsEncrypt or secret!"
-  }
-}
-
-variable "rancher_bootstrap_password" {
-  type        = string
-  default     = ""
-  description = "Rancher bootstrap password"
-  sensitive   = true
-
-  validation {
-    condition     = (length(var.rancher_bootstrap_password) >= 48) || (length(var.rancher_bootstrap_password) == 0)
-    error_message = "The Rancher bootstrap password must be at least 48 characters long."
-  }
-}
-
-variable "use_klipper_lb" {
-  type        = bool
-  default     = false
-  description = "Use klipper load balancer"
 }
